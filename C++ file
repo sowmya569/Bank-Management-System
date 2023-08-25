@@ -1,0 +1,602 @@
+#include<stdio.h>
+#include<iostream>
+#include<string.h>
+#include<fstream>
+#include<random>
+#include <cstdlib> 
+#include <cstring> 
+#include <set>
+#include<regex>
+#include<ctime>
+using namespace std;
+class transaction{
+	public: char name[20];
+	char phone[11];
+	char acc_no[12];
+	const char* age;
+	char dob[10];
+	std::string type;
+	char buffer[150];
+	char secretPIN[5];
+	char amount[5];
+	char total[5];
+	char email[20];
+	std::string admin_id;
+	std::string password;
+	transaction(){
+	
+	admin_id = "OurBank@Ifrit";
+	password = "RA@LLss2024*";}
+bool isValidDate(const std::string& date){
+    regex dateRegex(R"(^(0[1-9]|[1-2][0-9]|3[0-1])/(0[1-9]|1[0-2])/((19|20)\d{2})$)");
+
+    return std::regex_match(date, dateRegex);}
+    
+    bool isValidEmail(const std::string& email) {
+    regex emailRegex(R"(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)");
+
+    return regex_match(email, emailRegex);    
+}
+	bool isAccountNumberExist(const std::string& accNo){
+    std::ifstream inputFile("AccountNew.txt");
+    std::string line;
+    while (std::getline(inputFile, line)){
+        std::istringstream iss(line);
+        std::string accNoFromFile;
+        std::getline(iss, accNoFromFile, '|');
+        if (accNoFromFile == accNo) {
+            inputFile.close();
+            return true;
+        }
+    }
+    inputFile.close();
+    return false;
+}
+
+bool isSecretPINUnique(const std::string& filename, const char* secretPIN) {
+    std::ifstream file(filename);
+    if (!file) {
+        return true;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        std::string storedSecretPIN = line.substr(line.find_last_of('|') + 1);
+        if (storedSecretPIN == secretPIN) {
+            file.close();
+            return false; // Found a duplicate secret PIN
+        }
+    }
+    file.close();
+    return true; // Secret PIN is unique
+}
+    int calculateAge(const std::string& dateOfBirth){
+    // Get the current time
+    std::time_t currentTime = std::time(nullptr);
+    std::tm* now = std::localtime(&currentTime);
+
+    // Parse the date of birth
+    std::tm dob = {};
+    std::istringstream(dateOfBirth.substr(0, 2)) >> dob.tm_mday;
+    std::istringstream(dateOfBirth.substr(3, 2)) >> dob.tm_mon;
+    std::istringstream(dateOfBirth.substr(6, 4)) >> dob.tm_year;
+
+    // Adjust month and year values
+    dob.tm_mon -= 1;  // Month is zero-based
+    dob.tm_year -= 1900;  // Years since 1900
+
+    // Calculate the age
+    int age = now->tm_year - dob.tm_year;
+    if (now->tm_mon < dob.tm_mon || (now->tm_mon == dob.tm_mon && now->tm_mday < dob.tm_mday)) {
+        age--;
+    }
+
+    return age;
+}
+}rec[20];
+fstream file;
+transaction t;
+std::set<unsigned int> generatedNumbers; 
+void newuser(){
+	file.open("AccountNew.txt",ios::app);
+	if(!file){
+		std::cout<<"Couldn't open";
+		exit(1);
+	}
+	std::cout<<"Enter your name";
+	std::cin>>t.name;
+	
+	std::cout<<"Enter your phone number:";
+	cin>>t.phone;
+    if(strlen(t.phone)>10){
+    	std::cout<<"Invalid number";
+    	exit(0);
+	}
+    
+    std::cout<<"Enter your date of birth:";
+    std::cin>>t.dob;
+    if (t.isValidDate(t.dob)) {
+        std::cout << "Valid date." << std::endl;
+    } else {
+        std::cout << "Invalid date." << std::endl;
+        return;
+    }
+      int Charage = t.calculateAge(t.dob);
+     std::ostringstream oss;
+        oss << Charage;
+        std::string ageStr = oss.str();
+         t.age = ageStr.c_str();
+    std::cout<<"Your age is:"<<t.age<<"\n";
+    std::cout<<"Enter the type of account (e.g., savings, current)\n";
+    std::cout<<"s-savings,c-current\n";
+    std::cin>>t.type;
+    if(t.type=="s"|| t.type=="S"||t.type=="c"||t.type=="C"){
+    	if(t.type=="s"||t.type=="S"){
+    		std::cout<<"You have opted Saving account!"<<std::endl;
+		}
+		else{
+			std::cout<<"You have opted Current Account!"<<std::endl;
+		}
+	}
+	else{
+		std::cout<<"You must opt saving(s) or current(c) account\n";
+		return;
+	}
+    cout<<"Enter your email-Id";
+    cin>>t.email;
+    if (t.isValidEmail(t.email)) {
+        std::cout << "Valid email address." << std::endl;
+    } else {
+        std::cout << "Invalid email address." << std::endl;
+    }
+	std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_int_distribution<unsigned int> dist(111111111111,999999999999);
+    unsigned int randomAccNo;
+//    unsigned int randomAccNo;
+do {
+    randomAccNo = dist(generator);
+} while (generatedNumbers.count(randomAccNo) > 0 || t.isAccountNumberExist(std::to_string(randomAccNo)));
+
+    generatedNumbers.insert(randomAccNo);
+
+    std::string accNoStr = std::to_string(randomAccNo);
+    std::strcpy(t.acc_no, accNoStr.c_str());
+
+    std::cout << "Your Account number is generated: " << t.acc_no << std::endl;
+    std::cout << "Enter secret PIN: ";
+    std::cin >> t.secretPIN;
+ while (!t.isSecretPINUnique("AccountNew.txt", t.secretPIN)) {
+        std::cout << "Secret PIN already entered. Please enter a different PIN." << std::endl;
+        std::cin >> t.secretPIN;
+    }
+    std::cout<<"please depoist intial amount!!"<<std::endl;
+    std::cout<<"Please make sure that depoist is more than 1000 Rupees."<<std::endl;
+    cin>>t.amount;
+    if (std::stoi(t.amount) >= 1000) {
+        std::strcpy(t.total, t.amount);
+    } else {
+        std::cout << "Please enter an amount greater than 1000 Rupees." << std::endl;
+        return;
+    }
+    std::cout<<"Account Created Successfully!!"<<std::endl;
+     file<<t.acc_no<<"|"<<t.name<<"|"<<t.type<<"|"<<t.dob<<"|"<<t.age<<"|"<<t.phone<<"|"<<t.email<<"|"<<t.total<<"|"<<t.secretPIN<<std::endl;
+    file.close();
+    
+}
+
+void deposit() {
+    std::ifstream inputFile("AccountNew.txt");
+    std::ofstream outputFile("temp.txt");
+
+    if (!inputFile || !outputFile) {
+        std::cout << "Couldn't open the files." << std::endl;
+        exit(1);
+    }
+
+    std::string acc_number;
+    std::cout << "Enter the account number: ";
+    std::cin >> acc_number;
+
+    std::string secretPIN;
+    std::cout << "Enter the secret PIN: ";
+    std::cin >> secretPIN;
+
+    bool accountFound = false;
+
+    std::string line;
+    while (std::getline(inputFile, line)) {
+        std::istringstream iss(line);
+        std::string accNoFromFile;
+        std::string name,type, age, phone, email, total,dob, secretPINFromFile;
+
+        std::getline(iss, accNoFromFile, '|');
+        std::getline(iss, name, '|');
+        std::getline(iss,type,'|');
+        std::getline(iss, age, '|');
+        std::getline(iss,dob,'|');
+        std::getline(iss, phone, '|');
+        std::getline(iss, email, '|');
+        std::getline(iss, total, '|');
+        std::getline(iss, secretPINFromFile, '\n');
+
+        if (accNoFromFile == acc_number && secretPINFromFile == secretPIN) {
+            int depositAmount;
+            std::cout << "Enter the amount you want to deposit: ";
+            std::cin >> depositAmount;
+
+            int currentTotal = std::stoi(total);
+            int newTotal = currentTotal + depositAmount;
+            total = std::to_string(newTotal);
+
+            accountFound = true;
+        }
+
+        outputFile << accNoFromFile << "|" << name << "|"<<type<< "|"<< dob << "|"<<age<<"|"<< phone << "|"
+                   << email << "|" << total << "|" << secretPINFromFile << std::endl;
+    }
+    inputFile.close();
+    outputFile.close();
+
+    if (accountFound) {
+        std::remove("AccountNew.txt");
+        std::rename("temp.txt", "AccountNew.txt");
+        std::cout << "Deposit successful." << std::endl;
+    } else {
+        std::remove("temp.txt");
+        std::cout << "Invalid account number or secret PIN." << std::endl;
+    }
+}
+
+void withdraw() {
+    std::ifstream inputFile("AccountNew.txt");
+    std::ofstream outputFile("temp.txt");
+
+    if (!inputFile || !outputFile) {
+        std::cout << "Couldn't open the files." << std::endl;
+        exit(1);
+    }
+
+    std::string acc_number;
+    std::cout << "Enter the account number: ";
+    std::cin >> acc_number;
+    std::string secretPIN;
+    std::cout<<"Enter the secret pin";
+    std::cin>>secretPIN;
+
+    std::string line;
+    bool accountFound = false;
+
+    while (std::getline(inputFile, line)) {
+        std::istringstream iss(line);
+        std::string accNoFromFile;
+        std::string name,age,phone,type,email,total,dob,secretPINFromFile;
+            std::getline(iss,accNoFromFile,'|');
+		    std::getline(iss, name, '|');
+            std::getline(iss,type,'|');
+            std::getline(iss, age, '|');
+            std::getline(iss,dob,'|');
+            std::getline(iss, phone, '|');
+            std::getline(iss, email, '|');
+            std::getline(iss, total, '|');
+            std::getline(iss, secretPINFromFile, '\n');
+
+            if (accNoFromFile == acc_number && secretPINFromFile == secretPIN) {
+            int withdrawAmount;
+            std::cout << "Enter the amount you want to withdraw: ";
+            std::cin >> withdrawAmount;
+
+            int currentTotal = std::stoi(total);
+            if (withdrawAmount <= currentTotal) {
+                int newTotal = currentTotal - withdrawAmount;
+                if(newTotal>=1000){
+				
+				total = std::to_string(newTotal);
+
+                outputFile << accNoFromFile << "|" << name <<"|"<<type<< "|" << dob << "|"<<age<<"|" << phone << "|"
+                           << email << "|" << total << "|" << secretPIN << std::endl;
+
+                accountFound = true;
+            } 
+			else{
+				std::cout<<"Your account must have a initial amount of 1000 rupees!";
+			}}
+			else {
+                std::cout << "Insufficient funds." << std::endl;
+                outputFile << line << std::endl; // Copy the line as it is to the temporary file
+            }
+        } else {
+            outputFile << line << std::endl; // Copy the line as it is to the temporary file
+        }
+    }
+    inputFile.close();
+    outputFile.close();
+
+    if (accountFound) {
+        std::remove("AccountNew.txt");         // Remove the original file
+        std::rename("temp.txt", "AccountNew.txt"); // Rename the temporary file to the original file name
+        std::cout << "Withdrawal successful." << std::endl;
+    } else {
+        std::remove("temp.txt"); // Remove the temporary file if the account was not found
+        std::cout << "Invalid Account number or Secret Pin." << std::endl;
+    }
+}
+
+void retrieveRecord(const std::string& searchValue) {
+    std::ifstream inputFile("AccountNew.txt");
+
+    if (!inputFile) {
+        std::cout << "Couldn't open the file." << std::endl;
+        return;
+    }
+
+    std::string line;
+    bool recordFound = false;
+
+    while (std::getline(inputFile, line)) {
+        std::istringstream iss(line);
+        std::string accNoFromFile;
+        std::getline(iss, accNoFromFile, '|');
+
+        if (accNoFromFile == searchValue) {
+            std::string name, age, phone,type, email, total,dob, secretPIN;
+            std::getline(iss, name, '|');
+            std::getline(iss,type,'|');
+            std::getline(iss, age, '|');
+            std::getline(iss,dob,'|');
+            std::getline(iss, phone, '|');
+            std::getline(iss, email, '|');
+            std::getline(iss, total, '|');
+            std::getline(iss, secretPIN, '\n');
+
+            std::cout << "Record found:" << std::endl;
+            std::cout<<"\n======Account Number\tName\ttype\tAge\tDOB\t\tPhone Number\t\tEmail-Id\tTotal Balance======";
+            
+            std::cout <<"\n"<<"       "<<accNoFromFile<<"\t"<<name<<"\t"<<type<<"\t"<<dob<<"\t"<<age<<"\t\t"<<phone<<"\t"<<email<<"\t"<<total;
+            
+            recordFound = true;
+            break; // Stop searching after finding the record
+        }
+    }
+    inputFile.close();
+
+    if (!recordFound) {
+        std::cout << "Record not found." << std::endl;
+    }
+}
+
+void deleteRecord(const std::string& accNumber) {
+    std::ifstream inputFile("AccountNew.txt");
+    std::ofstream outputFile("temp.txt");
+
+    if (!inputFile || !outputFile) {
+        std::cout << "Couldn't open the files." << std::endl;
+        return;
+    }
+
+    std::string line;
+    bool recordFound = false;
+
+    while (std::getline(inputFile, line)) {
+        std::istringstream iss(line);
+        std::string accNoFromFile;
+        std::getline(iss, accNoFromFile, '|');
+
+        if (accNoFromFile == accNumber) {
+            // Skip writing this line to the temporary file
+            recordFound = true;
+        } else {
+            // Write the line to the temporary file
+            outputFile << line << std::endl;
+        }
+    }
+
+    inputFile.close();
+    outputFile.close();
+
+    if (recordFound) {
+        std::remove("AccountNew.txt");         // Remove the original file
+        std::rename("temp.txt", "AccountNew.txt"); // Rename the temporary file to the original file name
+        std::cout << "Record deleted successfully." << std::endl;
+    } else {
+        std::remove("temp.txt"); // Remove the temporary file if the record was not found
+        std::cout << "Record not found." << std::endl;
+    }
+}
+
+
+void updateRecord(const string& accNumber) {
+        ifstream inputFile("AccountNew.txt");
+        ofstream outputFile("temp.txt");
+
+        if (!inputFile || !outputFile) {
+            cout << "Couldn't open the files." << endl;
+            return;
+        }
+
+        string line;
+        bool recordFound = false;
+
+        while (getline(inputFile, line)) {
+            istringstream iss(line);
+            string accNoFromFile;
+            string name, age, phone,type, dob,secretPIN,email,total;
+
+            getline(iss, accNoFromFile, '|');
+            getline(iss, name, '|');
+            getline(iss,type,'|');
+            getline(iss, age, '|');
+            getline(iss,dob,'|');
+            getline(iss, phone, '|');
+            getline(iss, email, '|');
+            getline(iss,total,'|');
+            getline(iss,secretPIN,'\n');
+            if (accNoFromFile == accNumber) {
+                // Update the record
+                std::cout << "Enter the updated name: ";
+                std::cin>>name;
+
+                cout << "Enter the updated phone number: ";
+                std::cin>>phone;
+
+                cout << "Enter the updated date of birth (DD/MM/YYYY): ";
+                std::cin>>dob;
+                if (!t.isValidDate(dob)) {
+                    cout << "Invalid date format. Please enter in the format DD/MM/YYYY." << endl;
+                    return;
+                }
+                int Charage = t.calculateAge(dob);
+                std::ostringstream oss;
+                oss << Charage;
+                std::string ageStr = oss.str();
+                age = ageStr.c_str();
+                std::cout<<"Your age is:"<<age<<"\n";
+                cout<<"Enter the updated email";
+                std::cin>>email;
+                if (!t.isValidEmail(email)){
+                	std::cout<<"Invalid format of email.Please enter email with \"@\" in it"<<endl;
+                	return;
+				}
+
+                recordFound = true;
+            }
+
+            outputFile << accNoFromFile << "|" << name<<"|"<<type<< "|"<<dob<<"|" <<age<< "|" << phone << "|"<<email<<'|'
+                       << total << "|"<<secretPIN<<"\n";
+        }
+
+        inputFile.close();
+        outputFile.close();
+
+        if (recordFound) {
+            remove("AccountNew.txt");             // Remove the original file
+            rename("temp.txt", "AccountNew.txt"); // Rename the temporary file to the original file name
+            cout << "Record updated successfully." << endl;
+        } else {
+            remove("temp.txt"); // Remove the temporary file
+            cout << "Record not found." << endl;
+        }
+    }
+void displayRecords() {
+    std::ifstream inputFile("AccountNew.txt");
+
+    if (!inputFile) {
+        std::cout << "Couldn't open the file." << std::endl;
+        return;
+    }
+
+    std::string line;
+    int recordCount = 0;
+    std::cout<<"\nAcc_No\t\tName\tType\tDOB\t\tAge\tPhone\t\tEmail\t\tBalance"<<std::endl;
+    while (std::getline(inputFile, line)) {
+        std::istringstream iss(line);
+        std::string field;
+        int fieldCount = 0;
+        
+        while (std::getline(iss, field, '|')) {
+            ++fieldCount;
+            if (fieldCount < 9) {
+                std::cout << field << "\t";
+            }
+        }
+
+        std::cout << std::endl;
+        ++recordCount;
+    }
+
+    inputFile.close();
+}
+
+int main() {
+    int ch;
+    while (1) {
+    	std::cout<<"\n-------------------------------------------------------------------------------\n";
+    	std::cout<<"\n=============================WELCOME TO YOUR BANK==============================\n";
+    	std::cout<<"\n-------------------------------------------------------------------------------\n";
+    	std::cout<<"Our services provided are...\n";
+    	std::cout<<"1.Create an account\n";
+    	std::cout<<"2.Deposit amount\n";
+    	std::cout<<"3.Withdraw amount\n";
+    	std::cout<<"4.Balance Enquiry\n";
+    	std::cout<<"5.Delete Recordn\n";
+    	std::cout<<"6.Update Record\n";
+    	std::cout<<"7.Display All\n";
+        std::cout <<"\nEnter your choice:";
+        std::cin >> ch;
+ 
+        switch (ch) {
+            case 1:
+                newuser();
+                break;
+            case 2:
+                deposit();
+                break;
+            case 3:
+			    withdraw();
+            	break;
+            case 4: {
+                std::string searchValue;
+                std::cout << "Enter the account number to retrieve the record: ";
+                std::cin >> searchValue;
+                retrieveRecord(searchValue);
+                break;
+            }
+            case 5:{
+            	std::string adminid;
+            	std::string pass;
+            	std::cout<<"Enter the Admin-Id";
+            	std::cin>>adminid;
+            	std::cout<<"Enter the admin password";
+            	std::cin>>pass;
+            	if(pass==t.password && adminid==t.admin_id){
+            	 std::string acc;
+                 std::cout << "Enter the account number to delete the record: ";
+                 std::cin >> acc;
+                 deleteRecord(acc);}
+                 else
+                 std::cout<<"The password is wrong";
+                 break;
+				 }
+			case 6:{
+				std::string adminid;
+            	std::string pass;
+            	std::cout<<"Enter the Admin-Id";
+            	std::cin>>adminid;
+            	std::cout<<"Enter the admin password";
+            	std::cin>>pass;
+            	if(pass==t.password && adminid==t.admin_id){
+				std::string accNumber;
+
+             std::cout << "Enter the account number of the record to update: ";
+            std::cin>>accNumber;
+
+    if (!t.isAccountNumberExist(accNumber)) {
+        std::cout << "Record not found." << std::endl;
+        return 0;
+    }
+    updateRecord(accNumber);
+break;
+}}
+            case 7:{
+				std::string adminid;
+            	std::string pass;
+            	std::cout<<"Enter the Admin-Id";
+            	std::cin>>adminid;
+            	std::cout<<"Enter the admin password";
+            	std::cin>>pass;
+            	if(pass==t.password && adminid==t.admin_id){
+            	displayRecords();}
+            	else{
+            		std::cout<<"Wrong Admin ID or Password"<<std::endl;
+				}
+            	break;}
+            case 8:
+                return 0; 
+            default:
+                cout << "Invalid choice. Please try again.\n" << endl;
+                break;
+        }
+    }
+    return 0;
+}
+
